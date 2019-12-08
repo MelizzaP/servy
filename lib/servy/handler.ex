@@ -1,9 +1,11 @@
-require Logger
-
 defmodule Servy.Handler do
   @moduledoc "Handles HTTP requests"
 
   @pages_path  Path.expand("../../pages", __DIR__)
+
+  import Servy.Plugins, only: [track: 1, rewrite_path: 1, emojify: 1]
+  import Servy.Parser, only: [parse: 1]
+  import Servy.HandleFile, only: [handle_file: 2]
 
   @doc "Transforms a request into a response"
   def handle(request) do
@@ -15,50 +17,6 @@ defmodule Servy.Handler do
     |> emojify
     |> format_response
   end
-
-  @doc "adds emoji to success response"
-  def emojify(%{status: 200, resp_body: resp_body} = conv) do
-    emoji = String.duplicate("🤘", 3)
-    body = emoji <> "\n" <> resp_body <> "\n" <> emoji
-    %{ conv | resp_body: body }
-  end
-
-  def emojify(conv), do: conv
-
-
-  def track(%{status: 404, path: path} = conv) do
-    Logger.warn "Warning: #{path} is on the loose!"
-    conv
-  end
-
-  def track(conv), do: conv
-
-  def parse(request) do
-    [method, path, _] =
-      request
-      |> String.split("\n")
-      |> List.first
-      |> String.split(" ")
-    %{ method: method, path: path, resp_body: "", status: nil }
-  end
-
-  def rewrite_path(%{path: "/wildlife"} = conv) do
-    %{conv | path: "/wildthings"}
-  end
-
-  def rewrite_path(%{path: path} = conv) do
-    regex = ~r{\/(?<thing>\w+)\?id=(?<id>\d+)}
-    captures = Regex.named_captures(regex, path)
-    rewrite_path_captures(conv, captures)
-  end
-
-  def rewrite_path(conv), do: conv
-
-  def rewrite_path_captures(conv, %{"thing" => thing, "id" => id}) do
-    %{ conv | path: "/#{thing}/#{id}" }
-  end
-
-  def rewrite_path_captures(conv, nil), do: conv
 
   def route(%{ method: "GET", path: "/wildthings" } = conv) do
     %{ conv | status: 200, resp_body: "Bears, Lions, Tigers" }
@@ -75,18 +33,6 @@ defmodule Servy.Handler do
       |> handle_file(conv)
   end
 
-  def handle_file({:ok, content}, conv) do
-    %{ conv | status: 200, resp_body: content }
-  end
-
-  def handle_file({:error, :enoent}, conv) do
-    %{ conv | status: 404, resp_body: "File not found 😬" }
-  end
-
-  def handle_file({:error, reason}, conv) do
-    %{ conv | status: 500, resp_body: "File error: #{reason}" }
-  end
-
   def route(%{method: "GET", path: "/bears/" <> id } = conv) do
     %{ conv | status: 200, resp_body: "Bear #{id}" }
   end
@@ -96,18 +42,6 @@ defmodule Servy.Handler do
     |> Path.join("#{page}.html")
     |> File.read
     |> handle_file(conv)
-  end
-
-  def handle_file({:ok, content}, conv) do
-    %{conv | status: 200, resp_body: content}
-  end
-
-  def handle_file({:error, :enoent}, conv) do
-    %{conv | status: 404, resp_body: "File not found 😬" }
-  end
-
-  def handle_file({:error, reason}, conv) do
-    %{conv | status: 500, resp_body: "File error: #{reason}"}
   end
 
   def route(%{ method: "DELETE", path: "/bears/" <> _id } = conv) do
