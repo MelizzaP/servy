@@ -25,7 +25,7 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{ method: "GET", path: "/bears" } = conv) do
-    %{ conv | status: 200, resp_body: "Brown, Black, Polar" }
+    %{ conv | status: 200, resp_body: "Greg, Molly, Piper" }
   end
 
   def route(%Conv{method: "GET", path: "/bears/new" } = conv) do
@@ -48,6 +48,11 @@ defmodule Servy.Handler do
 
   def route(%Conv{ method: "DELETE", path: "/bears/" <> _id } = conv) do
     %{ conv | status: 403, resp_body: "Don't delete bears you piece of shit!" }
+  end
+
+  def route(%Conv{ method: "POST", path: "/bears", params: params} = conv) do
+    %{ conv | status: 201,
+      resp_body: "A #{params["type"]} 🐻 named #{params["name"]} has been born" }
   end
 
   def route(%Conv{ path: path } = conv) do
@@ -142,6 +147,19 @@ Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
 
+"""
+response = Servy.Handler.handle(request)
+IO.puts response
+
+request = """
+POST /bears HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 21
+
+name=Rusty&type=Brown
 """
 response = Servy.Handler.handle(request)
 IO.puts response
