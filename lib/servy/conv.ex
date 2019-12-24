@@ -6,8 +6,8 @@ defmodule Servy.Conv do
             params: %{},
             headers: %{}
 
-  def full_status(conv) do
-    "#{conv.status} #{status_reason( conv )}"
+  def full_status(%{status: status}) do
+    "#{status} #{status_reason(status)}"
   end
 
   defp status_reason(code) do
