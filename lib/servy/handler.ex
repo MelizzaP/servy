@@ -4,9 +4,9 @@ defmodule Servy.Handler do
   alias Servy.Conv
   alias Servy.BearController
 
-  @pages_path  Path.expand("pages", File.cwd!)
+  @pages_path Path.expand("pages", File.cwd!())
 
-  import Servy.Plugins, only: [track: 1, rewrite_path: 1, emojify: 1]
+  import Servy.Plugins, only: [track: 1, rewrite_path: 1]
   import Servy.Parser, only: [parse: 1]
   import Servy.HandleFile, only: [handle_file: 2]
 
@@ -16,54 +16,85 @@ defmodule Servy.Handler do
     |> parse
     |> rewrite_path
     |> route
+    |> Conv.put_content_length()
     |> track
     |> format_response
   end
 
-  def route(%Conv{ method: "GET", path: "/wildthings" } = conv) do
-    %{ conv | status: 200, resp_body: "Bears, Lions, Tigers" }
+  def route(%Conv{method: "GET", path: "/wildthings"} = conv) do
+    %{conv | status: 200, resp_body: "Bears, Lions, Tigers"}
   end
 
-  def route(%Conv{ method: "GET", path: "/bears" } = conv) do
-    BearController.index conv
-  end
-
-  def route(%Conv{method: "GET", path: "/bears/new" } = conv) do
+  def route(%Conv{method: "GET", path: "/faq"} = conv) do
     @pages_path
-      |> Path.join("form.html")
-      |> File.read
-      |> handle_file(conv)
+    |> Path.join("faq.md")
+    |> Earmark.as_html()
+    |> handle_file(conv)
+    |> %{conv | status: 200, resp_body: "Bears, Lions, Tigers"}
   end
 
-  def route(%Conv{method: "GET", path: "/bears/" <> id } = conv) do
+  def route(%Conv{method: "GET", path: "/bears"} = conv) do
+    BearController.index(conv)
+  end
+
+  def route(%Conv{method: "GET", path: "/api/bears"} = conv) do
+    Servy.Api.BearController.index(conv)
+  end
+
+  def route(%Conv{method: "POST", path: "/api/bears"} = conv) do
+    Servy.Api.BearController.create(conv)
+  end
+
+  def route(%Conv{method: "GET", path: "/bears/new"} = conv) do
+    @pages_path
+    |> Path.join("form.html")
+    |> File.read()
+    |> handle_file(conv)
+  end
+
+  def route(%Conv{method: "GET", path: "/bears/" <> id} = conv) do
     params = Map.put(conv.params, "id", id)
     BearController.show(conv, params)
   end
 
-  def route(%Conv{method: "GET", path: "/pages" <> page } = conv) do
+  def route(%Conv{method: "GET", path: "/pages" <> page} = conv) do
     @pages_path
     |> Path.join("#{page}.html")
-    |> File.read
+    |> File.read()
     |> handle_file(conv)
   end
 
-  def route(%Conv{ method: "DELETE", path: "/bears/" <> _id } = conv) do
-    BearController.destroy conv
+  def route(%Conv{method: "DELETE", path: "/bears/" <> _id} = conv) do
+    BearController.destroy(conv)
   end
 
-  def route(%Conv{ method: "POST", path: "/bears", params: params} = conv) do
-    BearController.create(conv, conv.params)
+  def route(%Conv{method: "POST", path: "/bears", params: params} = conv) do
+    BearController.create(conv, params)
   end
 
-  def route(%Conv{ path: path } = conv) do
-    %{ conv | status: 404, resp_body: "No #{path} here!" }
+  def route(%Conv{path: path} = conv) do
+    %{conv | status: 404, resp_body: "No #{path} here!"}
   end
+
+  defp format_response_headers(%Conv{resp_headers: resp_headers}) do
+    for {key, value} <- resp_headers do
+      "#{key}: #{value}\r"
+    end
+    |> Enum.sort()
+    |> Enum.reverse()
+    |> Enum.join("\n")
+  end
+
+  def markdown_to_html(%Conv{status: 200, resp_body: resp_body} = conv) do
+    %{conv | resp_body: Earmark.as_html!(resp_body)}
+  end
+
+  def markdown_to_html(%Conv{} = conv), do: conv
 
   def format_response(%Conv{} = conv) do
     """
     HTTP/1.1 #{Conv.full_status(conv)}\r
-    Content-Type: text/html\r
-    Content-Length: #{byte_size(conv.resp_body)}\r
+    #{format_response_headers(conv)}
     \r
     #{conv.resp_body}
     """

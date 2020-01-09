@@ -1,5 +1,4 @@
 defmodule Servy.Parser do
-
   alias Servy.Conv
 
   def parse(request) do
@@ -9,7 +8,7 @@ defmodule Servy.Parser do
     headers = parse_headers(header_lines)
     params = parse_params(headers["Content-Type"], params)
 
-    %Conv{ method: method, path: path, params: params }
+    %Conv{method: method, path: path, params: params}
   end
 
   @doc """
@@ -17,22 +16,35 @@ defmodule Servy.Parser do
   into a map with corresponding key-value pairs
 
   ## Examples
-       iex> params_string = "name=Baloo&type=Brown"
-       iex> Servy.Parser.parse_params("application/x-www-form-urlencoded", params_string)
+       iex> params = "name=Baloo&type=Brown"
+       iex> Servy.Parser.parse_params("application/x-www-form-urlencoded", params)
        %{"name" => "Baloo", "type" => "Brown"}
-       iex> Servy.Parser.parse_params("multipart/form-data", params_string)
+       iex> Servy.Parser.parse_params("multipart/form-data", params)
        %{}
   """
   def parse_params("application/x-www-form-urlencoded", params) do
     params
-    |> String.trim
-    |> URI.decode_query
+    |> String.trim()
+    |> URI.decode_query()
+  end
+
+  @doc """
+  Parses the given json object into a map with corresponding key-value pairs
+
+  ## Examples
+       iex> params = ~s({"name": "Breezly", "type": "Polar"})
+       iex> Servy.Parser.parse_params("application/json", params)
+       %{"name" => "Breezly", "type" => "Polar"}
+  """
+  def parse_params("application/json", params) do
+    params
+    |> Poison.Parser.parse!(%{})
   end
 
   def parse_params(_, _), do: %{}
 
   def parse_headers(headers) do
-    Enum.reduce(headers, %{}, fn(header, acc) ->
+    Enum.reduce(headers, %{}, fn header, acc ->
       [key, value] = String.split(header, ": ")
       Map.put(acc, key, value)
     end)

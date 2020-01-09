@@ -1,0 +1,14 @@
+{
+  "bears": [
+    {"id": 1, "name": "Tilly", "type": "Brown", "hibernating": true},
+    {"id": 2, "name": "Molly", "type": "Black"},
+    {"id": 3, "name": "Greg", "type": "Brown"},
+    {"id": 4, "name": "Sunny", "type": "Grizzly", "hibernating": true},
+    {"id": 5, "name": "Snowflake", "type": "Polar"},
+    {"id": 6, "name": "Grut", "type": "Black"},
+    {"id": 7, "name": "Karen", "type": "Panda", "hibernating": true},
+    {"id": 8, "name": "Mica", "type": "Polar"},
+    {"id": 9, "name": "Star", "type": "Red Panda", "hibernating": true},
+    {"id": 10, "name": "Booper", "type": "Teddy"}
+  ]
+}
