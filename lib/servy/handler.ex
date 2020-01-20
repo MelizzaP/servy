@@ -30,7 +30,6 @@ defmodule Servy.Handler do
     |> Path.join("faq.md")
     |> Earmark.as_html()
     |> handle_file(conv)
-    |> %{conv | status: 200, resp_body: "Bears, Lions, Tigers"}
   end
 
   def route(%Conv{method: "GET", path: "/bears"} = conv) do
