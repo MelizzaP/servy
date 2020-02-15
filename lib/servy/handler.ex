@@ -26,7 +26,7 @@ defmodule Servy.Handler do
     %{conv | status: 200, resp_body: "Bears, Lions, Tigers"}
   end
 
-  def route(%Conv{method: "GET", path: "/kaboom"} = conv) do
+  def route(%Conv{method: "GET", path: "/kaboom"}) do
     raise "Kaboom!"
   end
 
@@ -36,31 +36,8 @@ defmodule Servy.Handler do
     %{conv | status: 200, resp_body: "Awake!"}
   end
 
-  def route(%Conv{method: "GET", path: "/snapshots"} = conv) do
-    parent = self()
-    spawn(fn -> send(parent, {:result, VideoCam.get_snapshot("cam-1")}) end)
-
-    spawn(fn -> send(parent, {:result, VideoCam.get_snapshot("cam-2")}) end)
-
-    spawn(fn -> send(parent, {:result, VideoCam.get_snapshot("cam-3")}) end)
-
-    snapshot3 =
-      receive do
-        {:result, filename} -> filename
-      end
-
-    snapshot2 =
-      receive do
-        {:result, filename} -> filename
-      end
-
-    snapshot1 =
-      receive do
-        {:result, filename} -> filename
-      end
-
-    snapshots = [snapshot1, snapshot2, snapshot3]
-    %{conv | status: 200, resp_body: inspect(snapshots)}
+  def route(%Conv{method: "GET", path: "/sensors"} = conv) do
+    Servy.SensorController.index(conv)
   end
 
   def route(%Conv{method: "GET", path: "/faq"} = conv) do

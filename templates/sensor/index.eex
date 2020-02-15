@@ -1,0 +1,10 @@
+<h1>Check out these snapshots</h1>
+
+<ul>
+  <%= for snapshot <- snapshots do %>
+    <li><%= snapshot %></li>
+  <% end %>
+</ul>
+
+<h2>Bigfoot Spotted!</h2>
+<div>His GPS coords are: <%= bigfoot.lat %> latitude, <%= bigfoot.lng %> longitude.</div>
